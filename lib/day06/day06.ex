@@ -6,16 +6,6 @@ end
 # Maybe you can work out where the guard will go ahead of time so that The Historians can search safely?
 # You start by making a map (your puzzle input) of the situation. For example:
 #
-# ....#.....
-# .........#
-# ..........
-# ..#.......
-# .......#..
-# ..........
-# .#..^.....
-# ........#.
-# #.........
-# ......#...
 # The map shows the current position of the guard with ^ (to indicate the guard is currently facing up from the perspective of the map). Any obstructions - crates, desks, alchemical reactors, etc. - are shown as #.
 #
 # Lab guards in 1518 follow a very strict patrol protocol which involves repeatedly following these steps:
@@ -26,43 +16,67 @@ end
 defmodule Aoc.Day06 do
   alias Aoc.Helpers
 
-  @directions %{
-    :N => { -1, 0 }, # Up
-    :E => { 0, 1 },  # Right
-    :S => { 1, 0 },  # Down
-    :W => { 0, -1 }  # Left
-  }
-
   def p1 do
     grid =
-      Helpers.read_input("../inputs/d6sample.txt")
-      |> to_grid()
-      |> IO.inspect()
+      Helpers.read_input("../inputs/d6.txt") |> to_grid() |> IO.inspect()
 
     # find the start position '^'
     starting_location = find_starting_location(grid)
-    direction = :N
 
-    IO.inspect(starting_location, label: "STARTING LOCATION")
-
-    locations_visited = [starting_location]
-
-    IO.inspect(locations_visited, label: "LOCATIONS VISITED")
-
-    # Start patrolling
-    final_locations = patrol(grid, starting_location, direction, locations_visited)
-
-    IO.inspect(final_locations, label: "FINAL LOCATIONS VISITED")
+    patrol(grid, starting_location) |> Enum.uniq() |> Enum.count()
   end
 
-  def to_grid(input),
-    do:
-      input
-      |> Enum.map(&String.graphemes/1)
-      |> Enum.map(&Arrays.new/1)
-      |> Arrays.new()
+  # Start patrol
+  def patrol(grid, start_location), do: patrol(grid, start_location, :N, [start_location])
 
-  def find_starting_location(grid) do
+  def patrol(grid, current_location, direction, visited) do
+    %Location{x: x, y: y} = current_location
+
+    IO.inspect(current_location, label: "AT: ")
+
+    # IEx.pry()
+    # Check if the current position is within bounds
+    if x < 0 or y < 0 or x >= Arrays.size(grid) or y >= Arrays.size(Arrays.get(grid, 0)) do
+      visited
+    else
+      current_cell = grid[x][y]
+
+      # Check for an obstacle
+      if current_cell == "#" do
+        # turn right from last step
+        patrol(grid, hd(visited), turn(direction), visited)
+      else
+        # Move forward in the current direction
+        {dx, dy} = take_step(direction)
+        new_location = %Location{x: x + dx, y: y + dy}
+
+        patrol(grid, new_location, direction, [current_location | visited])
+      end
+    end
+  end
+
+  defp turn(:N), do: :E
+  defp turn(:E), do: :S
+  defp turn(:S), do: :W
+  defp turn(:W), do: :N
+
+  defp take_step(dir) do
+    case dir do
+      :N ->
+        {-1, 0}
+
+      :E ->
+        {0, 1}
+
+      :S ->
+        {1, 0}
+
+      _ ->
+        {0, -1}
+    end
+  end
+
+  defp find_starting_location(grid) do
     result =
       for {row, row_index} <- Enum.with_index(grid),
           {element, col_index} <- Enum.with_index(row),
@@ -74,35 +88,10 @@ defmodule Aoc.Day06 do
     %Location{x: x, y: y}
   end
 
-  def patrol(grid, %Location{x: x, y: y} = current_location, direction, visited) do
-    # Check if the current position is within bounds
-    if current_location.x < 0 or current_location.y < 0 or current_location.x >= Arrays.size(grid) or y >= Arrays.size(Arrays.get(grid, 0)) do
-      visited
-    else
-      current_cell = Arrays.get(grid, {x, y})
-
-      # Check for an obstacle
-      if current_cell == "#" do
-        # Turn right
-        new_direction = turn90(direction)
-        patrol(grid, current_location, new_direction, visited)
-      else
-        # Mark the current location as visited
-        visited = [current_location | visited]
-
-        # Move forward in the current direction
-        {dx, dy} = Map.get(@directions, direction)
-        new_location = %Location{x: x + dx, y: y + dy}
-
-        # Continue patrolling
-        patrol(grid, new_location, direction, visited)
-      end
-    end
-  end
-
-  defp turn90(:N), do: :E
-  defp turn90(:E), do: :S
-  defp turn90(:S), do: :W
-  defp turn90(:W), do: :N
-
+  defp to_grid(input),
+    do:
+      input
+      |> Enum.map(&String.graphemes/1)
+      |> Enum.map(&Arrays.new/1)
+      |> Arrays.new()
 end
