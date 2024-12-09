@@ -18,7 +18,8 @@ defmodule Aoc.Day06 do
 
   def p1 do
     grid =
-      Helpers.read_input("../inputs/d6.txt") |> to_grid() |> IO.inspect()
+      Helpers.read_input("../inputs/d6.txt")
+      |> to_grid()
 
     # find the start position '^'
     starting_location = find_starting_location(grid)
@@ -27,15 +28,11 @@ defmodule Aoc.Day06 do
   end
 
   # Start patrol
-  def patrol(grid, start_location), do: patrol(grid, start_location, :N, [start_location])
+  defp patrol(grid, start_location), do: patrol(grid, start_location, :N, [start_location])
 
-  def patrol(grid, current_location, direction, visited) do
+  defp patrol(grid, current_location, direction, visited) do
     %Location{x: x, y: y} = current_location
 
-    IO.inspect(current_location, label: "AT: ")
-
-    # IEx.pry()
-    # Check if the current position is within bounds
     if x < 0 or y < 0 or x >= Arrays.size(grid) or y >= Arrays.size(Arrays.get(grid, 0)) do
       visited
     else
