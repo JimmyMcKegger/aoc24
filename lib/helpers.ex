@@ -5,7 +5,7 @@ defmodule Aoc.Helpers do
 
   @base_url "https://adventofcode.com/2024"
   @session_cookie System.get_env("AOC_SESSION") ||
-                    raise(EnvironmentError, "Missing AOC_SESSION environment variable")
+                    IO.puts("Missing AOC_SESSION environment variable")
 
   def read_input(file_path) do
     file_path

@@ -2,24 +2,26 @@ defmodule Aoc.Day02 do
   @moduledoc """
   Day 02 Solutions.
   """
-
   alias Aoc.Helpers
 
-  # TODO
-  def p2 do
-
+  def p1 do
+    "../inputs/d2.txt"
+    |> Helpers.read_input()
+    |> Stream.map(&to_levels/1)
+    |> Stream.filter(&safety_check/1)
+    |> Enum.count()
   end
 
-  def p1 do
-    Helpers.read_input("../inputs/d2input.txt")
+  def p2 do
+    "../inputs/d2.txt"
+    |> Helpers.read_input()
     |> Enum.map(&to_levels/1)
-    |> IO.inspect()
-    |> Enum.filter(&safety_check/1)
+    |> Enum.filter(&dampened_safety_check/1)
     |> Enum.count()
   end
 
   defp safety_check(level) do
-    increasing = Enum.uniq(level) |> Enum.sort
+    increasing = Enum.uniq(level) |> Enum.sort()
     decreasing = Enum.reverse(increasing)
 
     cond do
@@ -35,24 +37,29 @@ defmodule Aoc.Day02 do
     end
   end
 
-  defp gradual_check(level, :asc) do
-    IO.inspect(level, label: "ascending")
+  defp dampened_safety_check(level) do
+    if safety_check(level) do
+      true
+    else
+      options =
+        for i <- 0..(length(level) - 1),
+            do: List.delete_at(level, i)
 
+      options
+      |> Enum.any?(fn level -> safety_check(level) end)
+    end
+  end
+
+  defp gradual_check(level, :asc) do
     level
     |> Enum.chunk_every(2, 1, :discard)
-    |> IO.inspect(label: "Sliding pairs")
     |> Enum.all?(fn [x, y] -> abs(x - y) <= 3 end)
-    |> IO.inspect
   end
 
   defp gradual_check(level, :desc) do
-    IO.inspect(level, label: "descending")
-
     level
     |> Enum.chunk_every(2, 1, :discard)
-    |> IO.inspect(label: "Sliding pairs")
     |> Enum.all?(fn [x, y] -> abs(x - y) <= 3 end)
-    |> IO.inspect
   end
 
   defp to_levels(line),

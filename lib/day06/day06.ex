@@ -2,19 +2,9 @@ defmodule Location do
   defstruct x: 0, y: 0
 end
 
-# a single guard is patrolling this part of the lab.
-# Maybe you can work out where the guard will go ahead of time so that The Historians can search safely?
-# You start by making a map (your puzzle input) of the situation. For example:
-#
-# The map shows the current position of the guard with ^ (to indicate the guard is currently facing up from the perspective of the map). Any obstructions - crates, desks, alchemical reactors, etc. - are shown as #.
-#
-# Lab guards in 1518 follow a very strict patrol protocol which involves repeatedly following these steps:
-# If there is something directly in front of you, turn right 90 degrees.
-# Otherwise, take a step forward.
-# Following the above protocol, the guard moves up several times until she reaches an obstacle (in this case, a pile of failed suit prototypes):
-
 defmodule Aoc.Day06 do
   alias Aoc.Helpers
+  require IEx
 
   def p1 do
     grid =
@@ -25,6 +15,66 @@ defmodule Aoc.Day06 do
     starting_location = find_starting_location(grid)
 
     patrol(grid, starting_location) |> Enum.uniq() |> Enum.count()
+  end
+
+  def p2 do
+    grid =
+      "../inputs/d6.txt"
+      |> Helpers.read_input()
+      |> to_grid()
+
+    grid
+    |> find_empty_spaces()
+    |> Stream.filter(fn {x, y} ->
+      will_get_stuck_in_loop(grid, find_starting_location(grid), {x, y})
+    end)
+    |> Enum.to_list()
+    |> length()
+  end
+
+  # Return true if the guard will get stuck in a loop
+  defp will_get_stuck_in_loop(grid, starting_location, new_obstruction) do
+    loop_patrol(grid, starting_location, new_obstruction)
+  end
+
+  defp loop_patrol(grid, starting_location, new_obstruction) do
+    loop_patrol(grid, starting_location, :N, [], new_obstruction)
+  end
+
+  defp loop_patrol(
+         grid,
+         %Location{x: x, y: y} = current_location,
+         direction,
+         visited,
+         new_obstruction
+       ) do
+    cond do
+      # guard has already been to this location in this direction, they will get stuck in a loop
+      {current_location, direction} in visited ->
+        true
+
+      # guard is out of bounds, they will not get stuck in a loop
+      x < 0 or y < 0 or x >= Arrays.size(grid) or y >= Arrays.size(Arrays.get(grid, 0)) ->
+        false
+
+      # guard hits an obstacle, step back and turn right
+      grid[x][y] == "#" or {x, y} == new_obstruction ->
+        {last_location, _last_direction} = hd(visited)
+        loop_patrol(grid, last_location, turn(direction), visited, new_obstruction)
+
+      # guard moves forward in the current direction and adds the current location and direction to the visited list
+      true ->
+        {dx, dy} = take_step(direction)
+        new_location = %Location{x: x + dx, y: y + dy}
+
+        loop_patrol(
+          grid,
+          new_location,
+          direction,
+          [{current_location, direction} | visited],
+          new_obstruction
+        )
+    end
   end
 
   # Start patrol
@@ -50,6 +100,13 @@ defmodule Aoc.Day06 do
         patrol(grid, new_location, direction, [current_location | visited])
       end
     end
+  end
+
+  defp find_empty_spaces(grid) do
+    for {row, row_index} <- Enum.with_index(grid),
+        {element, col_index} <- Enum.with_index(row),
+        element == ".",
+        do: {row_index, col_index}
   end
 
   defp turn(:N), do: :E
