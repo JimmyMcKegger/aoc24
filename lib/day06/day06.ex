@@ -3,12 +3,11 @@ defmodule Location do
 end
 
 defmodule Aoc.Day06 do
-  alias Aoc.Helpers
-  require IEx
+  import Aoc.Helpers
 
   def p1 do
     grid =
-      Helpers.read_input("../inputs/d6.txt")
+      read_input("../inputs/d6.txt")
       |> to_grid()
 
     # find the start position '^'
@@ -20,7 +19,7 @@ defmodule Aoc.Day06 do
   def p2 do
     grid =
       "../inputs/d6.txt"
-      |> Helpers.read_input()
+      |> read_input()
       |> to_grid()
 
     grid

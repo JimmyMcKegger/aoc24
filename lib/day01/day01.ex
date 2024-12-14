@@ -21,7 +21,7 @@ defmodule Aoc.Day01 do
 
   defp input_map(),
     do:
-      Helpers.read_input("../inputs/d1p1.txt")
+      Helpers.read_input("../inputs/d1sample.txt")
       |> Enum.reduce(%{first: [], second: []}, &map_of_lists(&1, &2))
 
   defp map_of_lists(str, acc) do
