@@ -5,23 +5,30 @@ defmodule Aoc.Day01 do
 
   alias Aoc.Helpers
 
-  @spec solve_part1() :: number()
-  def solve_part1,
+  @doc ~S"""
+  Takes the path to the input file and outputs the sum of distances
+
+  ## Examples
+
+      iex> Aoc.Day01.solve_part1("../inputs/d1sample.txt")
+      iex> 11
+
+  """
+  def solve_part1(input \\ "../inputs/d1.txt"),
     do:
-      input_map()
+      input_map(input)
       |> to_sorted()
       |> to_sum_of_ranges()
 
-  @spec solve_part2() :: number()
-  def solve_part2,
+  def solve_part2(input \\ "../inputs/d1.txt"),
     do:
-      input_map()
+      input_map(input)
       |> find_similarities()
       |> Enum.sum()
 
-  defp input_map(),
+  defp input_map(input),
     do:
-      Helpers.read_input("../inputs/d1sample.txt")
+      Helpers.read_input(input)
       |> Enum.reduce(%{first: [], second: []}, &map_of_lists(&1, &2))
 
   defp map_of_lists(str, acc) do

@@ -15,15 +15,31 @@ defmodule Aoc.Helpers do
     |> String.split("\n", trim: true)
   end
 
+  def read_inputs(file_path) do
+    file_path
+    |> Path.expand(__DIR__)
+    |> File.read!()
+
+  end
+
+  @doc ~S"""
+  Parses multiple strings and returns them as a list of integers.
+
+  ## Examples
+
+      iex> Aoc.Helpers.parse_integers(["1", "2", "3"])
+      [1, 2, 3]
+
+  """
   def parse_integers(lines) do
     Enum.map(lines, &String.to_integer/1)
   end
 
-  def fetch_problem(day) when is_integer(day) and day > 0 do
+  def fetch_problem(day, session \\ @session_cookie) when is_integer(day) and day > 0 do
     url = "#{@base_url}/day/#{day}"
 
     headers = [
-      {"Cookie", "session=#{@session_cookie}"}
+      {"Cookie", "session=#{session}"}
     ]
 
     case HTTPoison.get(url, headers) do

@@ -6,14 +6,6 @@ defmodule Aoc.D11 do
 
   def start_cache() do
     :ets.new(:stone_cache, [:set, :public, :named_table])
-
-    :ets.insert(:stone_cache, [
-      {0, 1},
-      {1, 2024},
-      {10, [1, 0]},
-      {99, [9, 9]},
-      {999, 2_021_976}
-    ])
   end
 
   def p1(blinks \\ 25, input \\ @input) do
@@ -28,35 +20,46 @@ defmodule Aoc.D11 do
     |> String.split(" ")
     |> parse_integers()
     |> IO.inspect()
-    |> blink(blinks)
-    |> Enum.count()
+    |> Task.async_stream(&blink([{&1, blinks}], blinks), timeout: :infinity)
+    |> Enum.reduce(0, fn {:ok, stones}, acc ->
+      Enum.count(stones) + acc
+    end)
   end
+
+  def blink(stones, count) when is_integer(stones), do: blink([stones], count)
 
   def blink(stones, 0), do: List.flatten(stones)
 
   def blink(stones, count) do
-    IO.inspect(count, label: "COUNT")
 
     new_stones =
-      Enum.map(stones, &process_stone/1)
+      Enum.map(stones, &process_stone({&1, count}))
       |> List.flatten()
 
     blink(new_stones, count - 1)
   end
 
-  def process_stone(num) do
-    case :ets.lookup(:stone_cache, num) do
-      [{^num, existing_result}] ->
+  def process_stone({num, count}) do
+    cache_key = {num, count}
+
+
+    case :ets.lookup(:stone_cache, cache_key) do
+      [{^cache_key, existing_result}] ->
         existing_result
 
       [] ->
-        new_result = handle_new_number(num)
-        :ets.insert(:stone_cache, {num, new_result})
+        new_result = handle_new_number(cache_key)
+        :ets.insert(:stone_cache, {cache_key, new_result})
         new_result
     end
   end
 
-  def handle_new_number(num) do
+  def handle_new_number({_num, 0}) do
+    1
+  end
+
+  def handle_new_number({num, _count}) do
+    IO.inspect(num, label: "NUM")
     digit_count = :math.log10(num) |> trunc()
 
     calculate_new_stones(num, digit_count + 1)
