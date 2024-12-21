@@ -15,4 +15,6 @@ defmodule AocTest do
              "../inputs/d11sample.txt"
            ) == 22
   end
+  doctest Aoc.D4
+
 end
