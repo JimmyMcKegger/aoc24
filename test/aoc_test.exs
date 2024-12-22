@@ -1,6 +1,9 @@
 defmodule AocTest do
   use ExUnit.Case
 
+  doctest Aoc.D4
+  doctest Aoc.D7
+
   test "Day 1 part 1" do
     assert Aoc.Day01.solve_part1("../inputs/d1sample.txt") == 11
   end
@@ -15,6 +18,5 @@ defmodule AocTest do
              "../inputs/d11sample.txt"
            ) == 22
   end
-  doctest Aoc.D4
 
 end
