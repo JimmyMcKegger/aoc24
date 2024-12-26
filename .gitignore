@@ -30,3 +30,4 @@ inputs/
 .formatter.exs
 
 .env
+.vscode
