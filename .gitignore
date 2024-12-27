@@ -26,6 +26,7 @@ aoc-*.tar
 /tmp/
 
 inputs/
+lib/*.txt
 .elixir_ls
 .formatter.exs
 
