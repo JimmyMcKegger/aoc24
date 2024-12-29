@@ -29,6 +29,6 @@ inputs/
 lib/*.txt
 .elixir_ls
 .formatter.exs
-
+*.txt
 .env
 .vscode
