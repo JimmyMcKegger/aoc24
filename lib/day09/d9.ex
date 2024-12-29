@@ -1,13 +1,6 @@
 defmodule Aoc.D9 do
   import Aoc.Helpers, only: [read_input: 1, parse_integers: 1]
 
-  def start_cache() do
-    :ets.new(:disk_drive, [:ordered_set, :public, :named_table])
-  end
-
-  def cache_size(),
-    do: :ets.info(:disk_drive) |> Keyword.get(:size)
-
   @doc ~S"""
   Finds the filesystem's checksum
 
@@ -17,10 +10,7 @@ defmodule Aoc.D9 do
     1928
   """
   def p1(input \\ "../inputs/d9sample.txt") do
-    case :ets.whereis(:disk_drive) do
-      :undefined -> start_cache()
-      _ -> true
-    end
+    ensure_cache()
 
     read_input(input)
     |> hd()
@@ -29,8 +19,7 @@ defmodule Aoc.D9 do
     |> handle_list()
 
     result = fill_gaps()
-
-    :ets.delete(:disk_drive)
+    cleanup_cache()
 
     result
   end
@@ -44,10 +33,7 @@ defmodule Aoc.D9 do
     2858
   """
   def p2(input \\ "../inputs/d9sample.txt") do
-    case :ets.whereis(:disk_drive) do
-      :undefined -> start_cache()
-      _ -> true
-    end
+    ensure_cache()
 
     %{data: false, file_id: num_files_plus_one} =
       read_input(input)
@@ -77,42 +63,39 @@ defmodule Aoc.D9 do
         end
       end)
 
-    :ets.delete(:disk_drive)
+    cleanup_cache()
+
     result
   end
 
-  def move_files_into_gaps(file_locations) do
+  defp move_files_into_gaps(file_locations) do
     for file <- file_locations, do: try_to_compact(file)
   end
 
-  def try_to_compact({a, b, file_id}) do
+  defp try_to_compact({a, b, file_id}) do
     empty_spaces = map_gap_ranges()
+    file_range = Range.new(a, b)
 
-    case Enum.find(empty_spaces, fn {x, y, _true} ->
-           file_space = Range.new(a, b)
-           empty_space = Range.new(x, y)
-           fits = Range.size(file_space) <= Range.size(empty_space)
-           valid = a > x
-
-           fits and valid
+    case Enum.find(empty_spaces, fn {x, y, _} ->
+           fits_and_valid?(file_range, Range.new(x, y))
          end) do
-      {x, y, _true} ->
-        # move file and update empty space
-        backfill({{a, b}, {x, y}, file_id})
-
-      _ ->
-        nil
+      {x, y, _} -> backfill({{a, b}, {x, y}, file_id})
+      nil -> nil
     end
   end
 
-  def backfill({{a, b}, {x, _y}, file_id}) do
+  defp fits_and_valid?(file_range, empty_range) do
+    Range.size(file_range) <= Range.size(empty_range) and file_range.first > empty_range.first
+  end
+
+  defp backfill({{a, b}, {x, _y}, file_id}) do
     size_to_fill = (Range.new(a, b) |> Range.size()) - 1
     for space <- Range.new(x, x + size_to_fill), do: :ets.insert(:disk_drive, {space, file_id})
 
     for location <- Range.new(a, b), do: :ets.insert(:disk_drive, {location, nil})
   end
 
-  def map_file_ranges(num_files) do
+  defp map_file_ranges(num_files) do
     for file <- num_files..0,
         do:
           :ets.match(:disk_drive, {:"$1", file})
@@ -122,7 +105,7 @@ defmodule Aoc.D9 do
           |> List.flatten()
   end
 
-  def map_gap_ranges() do
+  defp map_gap_ranges() do
     :ets.match(:disk_drive, {:"$1", nil})
     |> List.flatten()
     |> Enum.sort()
@@ -130,25 +113,25 @@ defmodule Aoc.D9 do
     |> Enum.reverse()
   end
 
-  def make_range_files(num, [], file),
+  defp make_range_files(num, [], file),
     do: [{num, num, file}]
 
-  def make_range_files(num, [{start, last, file} | rest], file) when num == last + 1,
+  defp make_range_files(num, [{start, last, file} | rest], file) when num == last + 1,
     do: [{start, num, file} | rest]
 
-  def make_range_files(num, acc, file),
+  defp make_range_files(num, acc, file),
     do: [{num, num, file} | acc]
 
-  def make_range_gaps(num, []),
+  defp make_range_gaps(num, []),
     do: [{num, num, true}]
 
-  def make_range_gaps(num, [{start, last, true} | rest]) when num == last + 1,
+  defp make_range_gaps(num, [{start, last, true} | rest]) when num == last + 1,
     do: [{start, num, true} | rest]
 
-  def make_range_gaps(num, acc),
+  defp make_range_gaps(num, acc),
     do: [{num, num, true} | acc]
 
-  def fill_gaps() do
+  defp fill_gaps() do
     last_position = cache_size() - 1
 
     Enum.reduce_while(0..last_position, 0, fn position, acc ->
@@ -156,7 +139,7 @@ defmodule Aoc.D9 do
     end)
   end
 
-  def handle_gaps(position, acc, last_position) do
+  defp handle_gaps(position, acc, last_position) do
     case :ets.lookup(:disk_drive, position) do
       [{^position, nil}] ->
         {index_to_move, swap_value} = get_last_data(last_position)
@@ -180,7 +163,7 @@ defmodule Aoc.D9 do
     end
   end
 
-  def get_last_data(last_position) do
+  defp get_last_data(last_position) do
     find_last_valid(last_position)
   end
 
@@ -202,25 +185,41 @@ defmodule Aoc.D9 do
     end
   end
 
-  def handle_list(list) do
+  defp handle_list(list) do
     Enum.reduce(list, %{data: true, file_id: 0}, &disk_map(&1, &2))
   end
 
-  def disk_map(files, %{data: true, file_id: file_id}) do
+  defp disk_map(files, %{data: true, file_id: file_id}) do
     for new_space <- cache_size()..(cache_size() + files - 1),
         do: :ets.insert(:disk_drive, {new_space, file_id})
 
     %{data: false, file_id: file_id + 1}
   end
 
-  def disk_map(0, %{data: false, file_id: file_id}) do
+  defp disk_map(0, %{data: false, file_id: file_id}) do
     %{data: true, file_id: file_id}
   end
 
-  def disk_map(files, %{data: false, file_id: file_id}) do
+  defp disk_map(files, %{data: false, file_id: file_id}) do
     for new_space <- cache_size()..(cache_size() + files - 1),
         do: :ets.insert(:disk_drive, {new_space, nil})
 
     %{data: true, file_id: file_id}
   end
+
+  defp ensure_cache() do
+    case :ets.whereis(:disk_drive) do
+      :undefined -> start_cache()
+      _ -> :ok
+    end
+  end
+
+  defp cleanup_cache(), do: :ets.delete(:disk_drive)
+
+  defp start_cache() do
+    :ets.new(:disk_drive, [:ordered_set, :public, :named_table])
+  end
+
+  defp cache_size(),
+    do: :ets.info(:disk_drive) |> Keyword.get(:size)
 end
