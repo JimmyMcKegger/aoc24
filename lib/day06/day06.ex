@@ -141,10 +141,4 @@ defmodule Aoc.Day06 do
     %Location{x: x, y: y}
   end
 
-  defp to_grid(input),
-    do:
-      input
-      |> Enum.map(&String.graphemes/1)
-      |> Enum.map(&Arrays.new/1)
-      |> Arrays.new()
 end

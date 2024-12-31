@@ -19,6 +19,13 @@ defmodule Aoc.Helpers do
     Enum.map(lines, &String.to_integer/1)
   end
 
+  def to_grid(input),
+    do:
+      input
+      |> Enum.map(&String.graphemes/1)
+      |> Enum.map(&Arrays.new/1)
+      |> Arrays.new()
+
   def fetch_problem(day) when is_integer(day) and day > 0 do
     url = "#{@base_url}/day/#{day}"
 
