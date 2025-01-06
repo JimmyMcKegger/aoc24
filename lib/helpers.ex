@@ -7,12 +7,12 @@ defmodule Aoc.Helpers do
   @session_cookie System.get_env("AOC_SESSION") ||
                     IO.puts("Missing AOC_SESSION environment variable")
 
-  def read_input(file_path) do
+  def read_input(file_path, splitter \\ "\n") do
     file_path
     |> Path.expand(__DIR__)
     |> File.read!()
     |> String.trim()
-    |> String.split("\n", trim: true)
+    |> String.split(splitter, trim: true)
   end
 
   def parse_integers(lines) do
