@@ -10,44 +10,39 @@ defmodule Aoc.D13 do
     iex> Aoc.D13.p1()
     480
   """
-  def p1(input \\ "../inputs/d13.txt") do
+  def p1(input \\ "../inputs/d13sample.txt") do
     read_input(input, "\n\n")
     |> Enum.map(&to_claw_tuple/1)
     |> Enum.map(&valid_games/1)
     |> List.flatten()
     |> Enum.sum()
-
   end
 
   def valid_games({ax, ay, bx, by, x, y}) do
     possibilities =
       for i <- 1..100,
-        j <- 1..100,
-        ax * i + bx * j == x,
-        k <- 1..100,
-        l <- 1..100,
-        ay * k + by * l == y,
-        i == k,
-        j == l,
-        do: 3 * i + j
+          j <- 1..100,
+          ax * i + bx * j == x,
+          k <- 1..100,
+          l <- 1..100,
+          ay * k + by * l == y,
+          i == k,
+          j == l,
+          do: 3 * i + j
 
-      if Enum.count(possibilities) > 1 do
-        cheapest(possibilities)
-      else
-        possibilities
-      end
+    if Enum.count(possibilities) > 1 do
+      cheapest(possibilities)
+    else
+      possibilities
+    end
   end
 
-  def cheapest(posibilities) do
-    posibilities
-    |> IO.inspect(label: "FINDING SMALLEST")
-    |> Enum.min_by(fn cost -> cost end)
-  end
+  defp cheapest(possibilities), do: Enum.min_by(possibilities, fn cost -> cost end)
 
-  defp to_claw_tuple(line) do
-    Regex.scan(@claw_pattern, line, capture: :all_names)
-    |> List.flatten()
-    |> parse_integers()
-    |> List.to_tuple()
-  end
+  defp to_claw_tuple(line),
+    do:
+      Regex.scan(@claw_pattern, line, capture: :all_names)
+      |> List.flatten()
+      |> parse_integers()
+      |> List.to_tuple()
 end

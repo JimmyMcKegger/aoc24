@@ -5,6 +5,7 @@ defmodule AocTest do
   doctest Aoc.D7
   doctest Aoc.D9
   doctest Aoc.D12
+  doctest Aoc.D13
 
   test "Day 1 part 1" do
     assert Aoc.Day01.solve_part1("../inputs/d1sample.txt") == 11
