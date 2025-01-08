@@ -1,57 +1,92 @@
 defmodule Aoc.D14 do
-  def p1(input \\ "sample.txt") do
-    make_table()
+  import Aoc.Helpers, only: [read_input: 1]
 
-    robo_info =
+  @input "../inputs/d14.txt"
+  @robot_pattern ~r/p=(?<x>-?\d+),(?<y>-?\d+) v=(?<dx>-?\d+),(?<dy>-?\d+)/
+  @grid_width 101
+  @grid_height 103
+
+  def p1(input \\ @input) do
+    robot_info =
       read_input(input)
       |> Enum.map(&parse_robots/1)
       |> Enum.with_index()
       |> Enum.map(&into_robo_grid/1)
 
-    IO.inspect(length(robo_info), label: "length")
+    seconds = for s <- 1..100, do: s
 
-    IO.inspect(cache_size(), label: "cache_size")
+    Enum.reduce(seconds, robot_info, &teleport/2)
+    |> Enum.reduce(%{q1: 0, q2: 0, q3: 0, q4: 0}, &to_quad/2)
+    |> Map.values()
+    |> Enum.product()
+  end
 
-    # cleanup_table()
+  defp to_quad(robot, acc) do
+    case find_quad(robot.position) do
+      :q1 ->
+        %{acc | q1: acc.q1 + 1}
 
-    robo_info
+      :q2 ->
+        %{acc | q2: acc.q2 + 1}
+
+      :q3 ->
+        %{acc | q3: acc.q3 + 1}
+
+      :q4 ->
+        %{acc | q4: acc.q4 + 1}
+
+      _ ->
+        acc
+    end
+  end
+
+  defp find_quad({x, _y}) when x == div(@grid_width, 2), do: nil
+  defp find_quad({_x, y}) when y == div(@grid_height, 2), do: nil
+
+  defp find_quad({x, y}) do
+    mid_x = div(@grid_width, 2)
+    mid_y = div(@grid_height, 2)
+
+    cond do
+      x < mid_x and y < mid_y ->
+        :q1
+
+      x > mid_x and y < mid_y ->
+        :q2
+
+      x < mid_x and y > mid_y ->
+        :q3
+
+      true ->
+        :q4
+    end
+  end
+
+  defp teleport(_second, robot_info) do
+    Enum.map(robot_info, fn robot_map ->
+      %{robot_map | position: jump(robot_map.position, robot_map.direction)}
+    end)
+  end
+
+  defp jump({current_x, current_y}, {dx, dy}) do
+    new_x = rem(current_x + dx, @grid_width)
+    new_y = rem(current_y + dy, @grid_height)
+
+    new_x = if new_x < 0, do: new_x + @grid_width, else: new_x
+    new_y = if new_y < 0, do: new_y + @grid_height, else: new_y
+
+    {new_x, new_y}
   end
 
   defp into_robo_grid({%{x: x, y: y, dx: dx, dy: dy}, index}) do
     position = {x, y}
     direction = {dx, dy}
 
-    true = :ets.insert_new(:robo_grid, [{"R-#{index}", position}])
-
     %{robot: "R-#{index}", position: position, direction: direction}
   end
 
   defp parse_robots(line) do
-    Regex.named_captures(~r/p=(?<x>-?\d+),(?<y>-?\d+) v=(?<dx>-?\d+),(?<dy>-?\d+)/, line)
+    Regex.named_captures(@robot_pattern, line)
     |> Map.new(fn {k, v} -> {String.to_atom(k), String.to_integer(v)} end)
   end
-
-  defp read_input(file_path) do
-    file_path
-    |> Path.expand(__DIR__)
-    |> File.read!()
-    |> String.split("\n", trim: true)
-  end
-
-  def get_robot(num) do
-    :ets.lookup(:robo_grid, "R-#{num}")
-  end
-
-  def set_robot(num, position) do
-    :ets.insert(:robo_grid, [{"R-#{num}", position}])
-  end
-
-  def make_table() do
-    :ets.new(:robo_grid, [:set, :public, :named_table])
-  end
-
-  defp cleanup_table(), do: :ets.delete(:robo_grid)
-
-  defp cache_size(),
-    do: :ets.info(:robo_grid) |> Keyword.get(:size)
 end
