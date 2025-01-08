@@ -11,7 +11,7 @@ defmodule Aoc.D14 do
       read_input(input)
       |> Enum.map(&parse_robots/1)
       |> Enum.with_index()
-      |> Enum.map(&into_robo_grid/1)
+      |> Enum.map(&into_map/1)
 
     seconds = for s <- 1..100, do: s
 
@@ -78,7 +78,7 @@ defmodule Aoc.D14 do
     {new_x, new_y}
   end
 
-  defp into_robo_grid({%{x: x, y: y, dx: dx, dy: dy}, index}) do
+  defp into_map({%{x: x, y: y, dx: dx, dy: dy}, index}) do
     position = {x, y}
     direction = {dx, dy}
 
